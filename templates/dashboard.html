@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NikshayAI — ASHA Dashboard</title>
+<style>
+:root {
+  --primary: #00897b; /* Healing Teal */
+  --primary-dark: #00695c;
+  --bg-page: #f8faf9;
+  --white: #ffffff;
+  --risk-red: #d32f2f;
+  --risk-amber: #f57c00;
+  --risk-green: #388e3c;
+  --text-main: #263238;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-main);
+  padding: 16px;
+}
+
+.header {
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e0e4e2;
+  padding-bottom: 12px;
+}
+
+.header h1 {
+  color: var(--primary);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.header p {
+  color: #607d8b;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Statistics Summary Cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.stat-num { font-size: 24px; font-weight: 800; }
+.stat-label { font-size: 11px; color: #78909c; margin-top: 2px; text-transform: uppercase; }
+
+.red-text { color: var(--risk-red); }
+.amber-text { color: var(--risk-amber); }
+.green-text { color: var(--risk-green); }
+
+/* Patient Table Styles */
+.table-wrap {
+  background: var(--white);
+  border-radius: 16px;
+  overflow-x: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 500px; /* Ensures scroll on tiny screens */
+}
+
+th {
+  background: #f1f5f4;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  color: #546e7a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 16px;
+  border-bottom: 1px solid #eceff1;
+  vertical-align: middle;
+}
+
+tr:hover td { background: #fdfdfd; }
+
+/* Status Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-red { background: #ffebee; color: var(--risk-red); }
+.badge-amber { background: #fff3e0; color: var(--risk-amber); }
+.badge-green { background: #e8f5e9; color: var(--risk-green); }
+
+/* History Dots */
+.history-flow { display: flex; gap: 4px; align-items: center; }
+.dot { width: 12px; height: 12px; border-radius: 3px; } /* Square dots for modern look */
+.dot-green { background: var(--risk-green); }
+.dot-red { background: var(--risk-red); }
+.dot-gray { background: #eceff1; border: 1px solid #cfd8dc; }
+
+/* Action Buttons */
+.action-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.action-btn:disabled { background: #b0bec5; }
+
+.sms-box {
+  background: #e1f5fe;
+  border: 1px solid #81d4fa;
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #01579b;
+  display: none;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+.name-cell strong { font-size: 15px; color: var(--text-main); display: block; }
+.name-cell small { color: #78909c; font-size: 12px; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>ASHA Worker Dashboard</h1>
+  <p>Patient Adherence Overview · Tracking {{patients|length}} Patients</p>
+</div>
+
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num red-text">{{patients|selectattr('risk','equalto','red')|list|length}}</div>
+    <div class="stat-label">High Risk</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num amber-text">{{patients|selectattr('risk','equalto','amber')|list|length}}</div>
+    <div class="stat-label">Caution</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num green-text">{{patients|selectattr('risk','equalto','green')|list|length}}</div>
+    <div class="stat-label">On Track</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Patient Info</th>
+        <th>Status</th>
+        <th>Last 7 Days</th>
+        <th>Follow-up</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in patients %}
+      <tr>
+        <td class="name-cell">
+          <strong>{{p.name}}</strong>
+          <small>{{p.village}} | #{{p.id}}</small>
+        </td>
+        
+        <td>
+          <span class="badge badge-{{p.risk}}">
+            {% if p.risk == 'red' %}Critical
+            {% elif p.risk == 'amber' %}Warning
+            {% else %}Regular{% endif %}
+          </span>
+        </td>
+        
+        <td>
+          <div class="history-flow">
+            {% for d in day_dates %}
+              {% if p.doses.get(d) == true %}
+                <div class="dot dot-green" title="Confirmed"></div>
+              {% elif p.doses.get(d) == false %}
+                <div class="dot dot-red" title="Missed"></div>
+              {% else %}
+                <div class="dot dot-gray" title="No Data"></div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </td>
+        
+        <td>
+          {% if p.risk != 'green' %}
+            <button class="action-btn" onclick="getSMS('{{p.id}}','{{p.name}}',this)">Remind</button>
+            <div class="sms-box" id="sms-{{p.id}}"></div>
+          {% else %}
+            <span style="color:#90a4ae; font-size:12px;">No Action</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<script>
+async function getSMS(id, name, btn) {
+  const originalText = btn.textContent;
+  btn.textContent = 'Writing...';
+  btn.disabled = true;
+  
+  try {
+    const r = await fetch('/sms/' + id);
+    const d = await r.json();
+    const box = document.getElementById('sms-' + id);
+    
+    box.style.display = 'block';
+    box.innerHTML = `<strong>Suggested Reminder:</strong><br>${d.message}`;
+    btn.textContent = 'Message Ready';
+  } catch(e) {
+    alert('Error drafting message');
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
