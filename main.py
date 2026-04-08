@@ -11,7 +11,14 @@ from datetime import date, timedelta
 import base64, json, random
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+import os
+from fastapi.templating import Jinja2Templates
+
+# Get the absolute path to the directory where main.py is located
+base_dir = os.path.dirname(os.path.realpath(__file__))
+template_path = os.path.join(base_dir, "templates")
+
+templates = Jinja2Templates(directory=template_path)
 
 # Make sure your .env file has GEMINI_API_KEY=your_key_here
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
